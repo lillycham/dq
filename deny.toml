@@ -1,0 +1,23 @@
+# License policy for `cargo deny check licenses`.
+#
+# dq is GPL-3.0-or-later, so every dependency must use a license that is
+# compatible with GPL-3.0. For crates with a choice of licenses ("A OR B"),
+# one allowed option is enough.
+
+[graph]
+# Test-only crates are not part of the binary.
+exclude-dev = true
+
+[licenses]
+allow = [
+    "Apache-2.0",
+    "BSL-1.0",
+    "MIT",
+    "Unicode-3.0",
+    "Unlicense",
+    "Zlib",
+]
+confidence-threshold = 0.9
+exceptions = [
+    { crate = "dq", allow = ["GPL-3.0-or-later"] },
+]

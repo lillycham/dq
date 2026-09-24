@@ -34,3 +34,12 @@ jobs:
       - uses: cachix/install-nix-action@v31
       - run: nix develop -c cargo fmt --check
       - run: nix develop -c cargo clippy --all-targets -- -D warnings
+
+  licenses:
+    name: Licenses
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      # Policy is in deny.toml.
+      - run: nix develop -c cargo deny check licenses
