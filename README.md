@@ -1,5 +1,7 @@
 # dq
 
+[![CI](https://github.com/lillycham/dq/actions/workflows/ci.yml/badge.svg)](https://github.com/lillycham/dq/actions/workflows/ci.yml)
+
 `jq` for directories. dq runs [jq](https://jqlang.org) filters over a directory tree:
 entries are objects, walks are streams, and file contents lead straight back into JSON.
 
