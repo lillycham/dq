@@ -1,0 +1,9 @@
+[package]
+name = "dq"
+version = "0.1.0"
+edition = "2024"
+description = "Query and manipulate directory trees with jq expressions"
+license = "GPL-3.0-or-later"
+readme = "README.md"
+keywords = ["jq", "filesystem", "query", "cli"]
+categories = ["command-line-utilities", "filesystem"]
