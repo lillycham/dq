@@ -5,6 +5,7 @@
 
 pub mod entry;
 pub mod funs;
+pub mod plan;
 
 use std::path::Path;
 
@@ -13,6 +14,7 @@ use jaq_core::{Ctx, Vars, compile, load, unwrap_valr};
 use jaq_json::Val;
 
 pub use jaq_core::Error;
+pub use plan::{Op, Plan};
 
 /// Compiled dq filter.
 pub struct Query {

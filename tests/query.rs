@@ -1,7 +1,8 @@
 use std::fs;
 use std::path::Path;
 
-use dq::Query;
+use dq::{Op, Plan, Query};
+use jaq_json::Val;
 use tempfile::TempDir;
 
 /// Tree used by most tests:
@@ -45,6 +46,15 @@ fn paths(root: &Path, code: &str) -> Vec<String> {
         .into_iter()
         .map(|p| p.trim_matches('"').trim_start_matches(&prefix).to_owned())
         .collect()
+}
+
+fn plan(root: &Path, code: &str) -> Plan {
+    let query = Query::compile(code).unwrap();
+    let mut plan = Plan::default();
+    for v in query.run(dq::root(root).unwrap()) {
+        plan.push(Op::from_val(&v.unwrap()).expect("an operation").unwrap());
+    }
+    plan
 }
 
 #[test]
@@ -134,4 +144,79 @@ fn compile_errors_have_positions() {
     assert_eq!(err, "1:5: undefined filter `nope/0`");
     let err = Query::compile("at(1").err().unwrap();
     assert!(err.starts_with("1:5: expected"), "{err}");
+}
+
+#[test]
+fn values_that_are_not_operations_are_ignored_by_the_plan() {
+    assert!(Op::from_val(&Val::from("rm".to_owned())).is_none());
+}
+
+#[test]
+fn mv_target_is_relative_to_the_parent() {
+    let dir = fixture();
+    let plan = plan(
+        dir.path(),
+        "files | select(.ext == \"jpeg\") | mv(.stem + \".jpg\")",
+    );
+    let root = dir.path();
+    assert_eq!(
+        plan.ops(),
+        [Op::Mv {
+            from: root.join("src/img/a.jpeg"),
+            to: root.join("src/img/a.jpg")
+        }]
+    );
+    plan.check().unwrap();
+    plan.apply().unwrap();
+    assert!(root.join("src/img/a.jpg").exists());
+    assert!(!root.join("src/img/a.jpeg").exists());
+}
+
+#[test]
+fn apply_creates_writes_copies_and_removes() {
+    let dir = fixture();
+    let root = dir.path();
+    let code = r#"
+        (child("out") | mkdir),
+        (child("out/x.txt") | write("x")),
+        (at("README.md") | cp("out/README.md")),
+        (at(".git") | rm)
+    "#;
+    let plan = plan(root, code);
+    plan.check().unwrap();
+    plan.apply().unwrap();
+    assert_eq!(fs::read_to_string(root.join("out/x.txt")).unwrap(), "x");
+    assert_eq!(
+        fs::read_to_string(root.join("out/README.md")).unwrap(),
+        "# hi\n"
+    );
+    assert!(!root.join(".git").exists());
+}
+
+#[test]
+fn duplicate_operations_are_merged() {
+    let dir = fixture();
+    let plan = plan(dir.path(), "at(\"README.md\") | rm, rm");
+    assert_eq!(plan.ops().len(), 1);
+}
+
+#[test]
+fn check_rejects_conflicts_without_changing_anything() {
+    let dir = fixture();
+    let root = dir.path();
+    let cases = [
+        // Removing a directory and something inside it.
+        "(at(\"src\") | rm), (at(\"src/main.rs\") | rm)",
+        // Two moves to the same place.
+        "(at(\"README.md\") | mv(\"x\")), (at(\"data.json\") | mv(\"x\"))",
+        // Moving onto something that exists.
+        "at(\"README.md\") | mv(\"data.json\")",
+        // Writing into a directory that does not exist.
+        "child(\"nope/x\") | write(\"x\")",
+    ];
+    for code in cases {
+        let plan = plan(root, code);
+        assert!(plan.check().is_err(), "{code} should not pass the check");
+    }
+    assert_eq!(paths(root, "tree").len(), 8);
 }
