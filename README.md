@@ -91,8 +91,9 @@ creates the same path twice, or overwrites an existing entry with `mv` or `cp`.
 ## Development
 
 ```sh
-nix develop    # shell with cargo, clippy, rustfmt and rust-analyzer
+nix develop    # shell with cargo, clippy, rustfmt, rust-analyzer and cargo-deny
 cargo test
+cargo deny check licenses   # dependency license policy, see deny.toml
 nix build      # also runs the tests
 ```
 
