@@ -11,6 +11,7 @@ dq -r 'tree(.name != ".git" and .name != "target") | .path'
 ```
 
 The language is full jq, provided by [jaq](https://github.com/01mf02/jaq), plus the filters below.
+See [docs/language.md](docs/language.md) for the full reference.
 
 ## Usage
 
